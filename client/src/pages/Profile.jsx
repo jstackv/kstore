@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const { showToast } = useToast();
   const [name, setName] = useState(user?.name || '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -43,63 +43,48 @@ export default function Profile() {
   };
 
   return (
-    <div className="px-6 md:px-10 py-8 max-w-lg">
-      <h1 className="font-serif text-2xl text-ink mb-8">Profile settings</h1>
+    <div className="mx-auto max-w-2xl px-5 py-8 md:px-10 animate-fade-in">
+      <div className="mb-8 flex items-center gap-4">
+        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-vault font-serif text-3xl text-white shadow-glow">
+          {(user?.name || '?').charAt(0).toUpperCase()}
+        </span>
+        <div>
+          <h1 className="font-serif text-4xl text-ink">Profile settings</h1>
+          <p className="text-sm text-slate">{user?.email}</p>
+        </div>
+      </div>
 
-      <form onSubmit={saveProfile} className="bg-white rounded-lg border border-ink/8 p-6 mb-6">
-        <h2 className="font-serif text-base text-ink mb-4">Account details</h2>
+      <form onSubmit={saveProfile} className="card mb-6 p-7">
+        <h2 className="mb-5 font-serif text-xl text-ink">Account details</h2>
 
-        <label className="block text-xs font-medium text-slate mb-1">Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full border border-ink/15 rounded-md px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-vault/40"
-        />
+        <label className="label">Name</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} className="input mb-4" />
 
-        <label className="block text-xs font-medium text-slate mb-1">Email</label>
-        <input
-          disabled
-          value={user?.email || ''}
-          className="w-full border border-ink/10 rounded-md px-3 py-2 text-sm mb-5 bg-paper text-slate"
-        />
+        <label className="label">Email</label>
+        <input disabled value={user?.email || ''} className="input mb-6" />
 
-        <button
-          disabled={savingProfile}
-          className="bg-vault text-white text-sm font-medium rounded-md px-4 py-2.5 hover:bg-vault-dark disabled:opacity-60"
-        >
+        <button disabled={savingProfile} className="btn-primary">
           {savingProfile ? 'Saving…' : 'Save changes'}
         </button>
       </form>
 
-      <form onSubmit={savePassword} className="bg-white rounded-lg border border-ink/8 p-6">
-        <h2 className="font-serif text-base text-ink mb-4">Change password</h2>
+      <form onSubmit={savePassword} className="card mb-6 p-7">
+        <h2 className="mb-5 font-serif text-xl text-ink">Change password</h2>
 
-        <label className="block text-xs font-medium text-slate mb-1">Current password</label>
-        <input
-          type="password"
-          required
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          className="w-full border border-ink/15 rounded-md px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-vault/40"
-        />
+        <label className="label">Current password</label>
+        <input type="password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="input mb-4" />
 
-        <label className="block text-xs font-medium text-slate mb-1">New password</label>
-        <input
-          type="password"
-          required
-          minLength={6}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full border border-ink/15 rounded-md px-3 py-2 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-vault/40"
-        />
+        <label className="label">New password</label>
+        <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input mb-6" />
 
-        <button
-          disabled={savingPassword}
-          className="bg-vault text-white text-sm font-medium rounded-md px-4 py-2.5 hover:bg-vault-dark disabled:opacity-60"
-        >
+        <button disabled={savingPassword} className="btn-primary">
           {savingPassword ? 'Updating…' : 'Update password'}
         </button>
       </form>
+
+      <button onClick={logout} className="btn-ghost md:hidden">
+        Log out
+      </button>
     </div>
   );
 }

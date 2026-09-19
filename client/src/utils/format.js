@@ -16,3 +16,13 @@ export const formatDate = (dateStr) => {
 };
 
 export const fileIconLabel = (fileType) => (fileType || '').toUpperCase();
+
+export const STORAGE_LIMIT = 2 * 1024 * 1024 * 1024; // 2GB display ceiling
+
+// How each file type is shown in the in-browser viewer
+export const viewerKind = (fileType) => {
+  if (fileType === 'pdf') return 'pdf';
+  if (['jpg', 'jpeg', 'png'].includes(fileType)) return 'image';
+  if (fileType === 'docx') return 'docx';
+  return 'office'; // doc, xls, xlsx, ppt, pptx -> hosted Office viewer
+};

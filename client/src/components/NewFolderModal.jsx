@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import Icon from './Icon';
 
 export default function NewFolderModal({ open, onClose, onCreate, initialName = '', title = 'New folder' }) {
   const [name, setName] = useState(initialName);
+
+  // Reset the field every time the dialog opens (fixes rename showing an empty box)
+  useEffect(() => {
+    if (open) setName(initialName || '');
+  }, [open, initialName]);
 
   if (!open) return null;
 
@@ -12,26 +19,30 @@ export default function NewFolderModal({ open, onClose, onCreate, initialName = 
     setName('');
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
-      <form onSubmit={submit} className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
-        <h3 className="font-serif text-lg text-ink mb-4">{title}</h3>
+  return createPortal(
+    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <form onSubmit={submit} className="modal max-w-sm p-7">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brass text-white shadow-md">
+          <Icon name="folder" className="h-6 w-6" />
+        </div>
+        <h3 className="mb-4 font-serif text-xl text-ink">{title}</h3>
         <input
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Folder name"
-          className="w-full border border-ink/15 rounded-md px-3 py-2 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-vault/40"
+          className="input mb-6"
         />
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate hover:text-ink">
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-ghost">
             Cancel
           </button>
-          <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-vault rounded-md hover:bg-vault-dark">
+          <button type="submit" className="btn-primary">
             Save
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }

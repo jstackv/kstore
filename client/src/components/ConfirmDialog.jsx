@@ -1,27 +1,48 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
+import Icon from './Icon';
 
-export default function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', onCancel, onConfirm }) {
+// tone: 'danger' (default) for destructive actions, 'friendly' for
+// everyday confirmations like logging out - same nice modal, softer color.
+export default function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = 'Delete',
+  icon = 'trash',
+  tone = 'danger',
+  onCancel,
+  onConfirm,
+}) {
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
-        <h3 className="font-serif text-lg text-ink mb-2">{title}</h3>
-        <p className="text-sm text-slate mb-6">{message}</p>
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate hover:text-ink transition-colors"
-          >
+  const isDanger = tone === 'danger';
+  // Portal straight to <body>: rendering in place would nest this inside
+  // whatever triggered it (e.g. the sidebar, which uses position: sticky
+  // and so creates its own stacking context) - that traps z-50 locally and
+  // the modal ends up painted behind unrelated page content. A portal
+  // escapes any ancestor's stacking context entirely.
+  return createPortal(
+    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
+      <div className="modal max-w-sm p-7">
+        <div
+          className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${
+            isDanger ? 'bg-rust/10 text-rust' : 'bg-vault/15 text-vault-glow'
+          }`}
+        >
+          <Icon name={icon} className="h-6 w-6" />
+        </div>
+        <h3 className="mb-1.5 font-serif text-xl text-ink">{title}</h3>
+        <p className="mb-7 text-sm leading-relaxed text-slate">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="btn-ghost">
             Cancel
           </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-rust rounded-md hover:bg-rust/90 transition-colors"
-          >
+          <button onClick={onConfirm} className={isDanger ? 'btn-danger' : 'btn-primary'}>
             {confirmLabel}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

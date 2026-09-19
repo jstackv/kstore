@@ -6,6 +6,8 @@ const {
   getDocuments,
   getDocument,
   viewDocument,
+  streamDocument,
+  warmDocument,
   downloadDocument,
   updateDocument,
   deleteDocument,
@@ -19,6 +21,8 @@ router.post('/upload', upload.single('file'), uploadDocument);
 router.get('/', getDocuments);
 router.get('/:id', getDocument);
 router.get('/:id/view', viewDocument);
+router.get('/:id/file', streamDocument);
+router.post('/:id/warm', warmDocument);
 router.get('/:id/download', downloadDocument);
 router.put('/:id', updateDocument);
 router.delete('/:id', deleteDocument);

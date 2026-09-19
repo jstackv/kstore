@@ -1,21 +1,31 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import Icon from './Icon';
+
+const NAV = [
+  { to: '/', label: 'Home', icon: 'grid', end: true },
+  { to: '/documents', label: 'Documents', icon: 'files' },
+  { to: '/profile', label: 'Profile', icon: 'user' },
+];
 
 export default function MobileNav() {
-  const item = ({ isActive }) =>
-    `flex-1 text-center py-3 text-xs font-medium ${isActive ? 'text-vault-dark' : 'text-slate'}`;
-
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-ink/10 flex z-40">
-      <NavLink to="/" end className={item}>
-        Dashboard
-      </NavLink>
-      <NavLink to="/documents" className={item}>
-        Documents
-      </NavLink>
-      <NavLink to="/profile" className={item}>
-        Profile
-      </NavLink>
+    <nav className="fixed inset-x-3 bottom-3 z-40 flex rounded-2xl bg-night-800/95 p-1.5 shadow-modal ring-1 ring-white/10 backdrop-blur-xl md:hidden">
+      {NAV.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) =>
+            `flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-semibold transition ${
+              isActive ? 'bg-white/10 text-white' : 'text-white/55'
+            }`
+          }
+        >
+          <Icon name={item.icon} className="h-5 w-5" />
+          {item.label}
+        </NavLink>
+      ))}
     </nav>
   );
 }

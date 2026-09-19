@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { listDocuments, downloadDocument, deleteDocument, updateDocument } from '../services/documentService';
+import { listDocuments, warmDocument, downloadDocument, deleteDocument, updateDocument } from '../services/documentService';
 import { listFolders, getFolder, createFolder, updateFolder, deleteFolder } from '../services/folderService';
 import DocumentRow from '../components/DocumentRow';
+import DocumentGridCard from '../components/DocumentGridCard';
 import FolderCard from '../components/FolderCard';
 import UploadModal from '../components/UploadModal';
 import NewFolderModal from '../components/NewFolderModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
+import Icon from '../components/Icon';
 import { useToast } from '../context/ToastContext';
 
 const FILE_TYPES = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'png'];
@@ -29,6 +31,24 @@ export default function Documents() {
   const [folderModal, setFolderModal] = useState({ open: false, mode: 'create', target: null });
   const [confirm, setConfirm] = useState({ open: false, type: null, target: null });
   const [renaming, setRenaming] = useState(null); // document being renamed inline
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState(() => localStorage.getItem('kstore_doc_view') || 'list');
+  const [selected, setSelected] = useState(() => new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const toggleView = (next) => {
+    setView(next);
+    localStorage.setItem('kstore_doc_view', next);
+  };
+
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelected(new Set());
 
   const load = async () => {
     try {
@@ -45,14 +65,18 @@ export default function Documents() {
         ]);
         setFolders(foldersRes.folders);
         setDocuments(docsRes.documents);
+        docsRes.documents.slice(0, 3).forEach((d) => warmDocument(d._id)); // pre-cache the newest few
       }
     } catch (err) {
       showToast('Could not load documents', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     load();
+    clearSelection();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folderId]);
 
@@ -93,12 +117,19 @@ export default function Documents() {
 
   const handleDeleteDoc = (doc) => setConfirm({ open: true, type: 'document', target: doc });
   const handleDeleteFolder = (f) => setConfirm({ open: true, type: 'folder', target: f });
+  const handleBulkDelete = () => setConfirm({ open: true, type: 'bulk', target: null });
 
   const confirmDelete = async () => {
     try {
       if (confirm.type === 'document') {
         await deleteDocument(confirm.target._id);
         showToast('Document deleted');
+      } else if (confirm.type === 'bulk') {
+        setBulkDeleting(true);
+        const ids = Array.from(selected);
+        await Promise.all(ids.map((id) => deleteDocument(id)));
+        showToast(`${ids.length} document${ids.length === 1 ? '' : 's'} deleted`);
+        clearSelection();
       } else {
         await deleteFolder(confirm.target._id);
         showToast('Folder deleted');
@@ -108,6 +139,8 @@ export default function Documents() {
     } catch {
       showToast('Delete failed', 'error');
       setConfirm({ open: false, type: null, target: null });
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -133,52 +166,50 @@ export default function Documents() {
   const isEmpty = folders.length === 0 && filteredDocsInFolder.length === 0;
 
   return (
-    <div className="px-6 md:px-10 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="mx-auto max-w-6xl px-5 py-8 md:px-10 animate-fade-in">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <button
-            onClick={() => navigate('/documents')}
-            className="text-xs font-medium text-slate hover:text-vault-dark"
-          >
-            Documents
-          </button>
-          {folder && (
-            <>
-              <span className="text-xs text-slate mx-1">/</span>
-              <span className="text-xs font-medium text-ink">{folder.name}</span>
-            </>
-          )}
-          <h1 className="font-serif text-2xl text-ink mt-1">{folder ? folder.name : 'All documents'}</h1>
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
+            <button onClick={() => navigate('/documents')} className="text-slate transition hover:text-vault-dark">
+              Documents
+            </button>
+            {folder && (
+              <>
+                <Icon name="chevron" className="h-3.5 w-3.5 text-slate/60" />
+                <span className="text-ink">{folder.name}</span>
+              </>
+            )}
+          </div>
+          <h1 className="font-serif text-4xl text-ink">{folder ? folder.name : 'All documents'}</h1>
+          <p className="mt-1.5 text-sm text-slate">
+            {folders.length} folder{folders.length === 1 ? '' : 's'} · {filteredDocsInFolder.length} document
+            {filteredDocsInFolder.length === 1 ? '' : 's'}
+          </p>
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={handleCreateFolder}
-            className="bg-white border border-ink/15 text-ink text-sm font-medium rounded-md px-4 py-2.5 hover:bg-paper transition-colors"
-          >
+          <button onClick={handleCreateFolder} className="btn-ghost">
+            <Icon name="folder-plus" className="h-4 w-4" />
             New folder
           </button>
-          <button
-            onClick={() => setUploadOpen(true)}
-            className="bg-vault text-white text-sm font-medium rounded-md px-4 py-2.5 hover:bg-vault-dark transition-colors"
-          >
+          <button onClick={() => setUploadOpen(true)} className="btn-primary">
+            <Icon name="upload" className="h-4 w-4" />
             Upload
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search documents…"
-          className="flex-1 min-w-[200px] border border-ink/15 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-vault/40"
-        />
-        <select
-          value={fileType}
-          onChange={(e) => setFileType(e.target.value)}
-          className="border border-ink/15 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-vault/40"
-        >
+      <div className="card mb-6 flex flex-wrap gap-3 p-3">
+        <div className="relative min-w-[200px] flex-1">
+          <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search documents…"
+            className="input pl-10"
+          />
+        </div>
+        <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="select w-auto">
           <option value="">All types</option>
           {FILE_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -193,7 +224,7 @@ export default function Documents() {
             setSortBy(sb);
             setOrder(o);
           }}
-          className="border border-ink/15 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-vault/40"
+          className="select w-auto"
         >
           <option value="createdAt-desc">Newest first</option>
           <option value="createdAt-asc">Oldest first</option>
@@ -202,56 +233,162 @@ export default function Documents() {
           <option value="fileSize-desc">Largest first</option>
           <option value="fileSize-asc">Smallest first</option>
         </select>
+        <div className="flex items-center gap-1 rounded-xl bg-paper p-1">
+          <button
+            onClick={() => toggleView('list')}
+            className={`icon-btn !h-8 !w-8 ${view === 'list' ? 'bg-surface text-vault-dark shadow-sm' : ''}`}
+            title="List view"
+            aria-label="List view"
+          >
+            <Icon name="list" className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => toggleView('grid')}
+            className={`icon-btn !h-8 !w-8 ${view === 'grid' ? 'bg-surface text-vault-dark shadow-sm' : ''}`}
+            title="Grid view"
+            aria-label="Grid view"
+          >
+            <Icon name="grid" className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-ink/8 overflow-hidden">
-        {isEmpty ? (
+      {loading ? (
+        <div className="card space-y-3 p-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton h-14 w-full" />
+          ))}
+        </div>
+      ) : isEmpty ? (
+        <div className="card">
           <EmptyState
             title="Nothing here yet"
             message="Upload a document or create a folder to get started."
+            action={
+              <button onClick={() => setUploadOpen(true)} className="btn-primary">
+                <Icon name="upload" className="h-4 w-4" />
+                Upload a document
+              </button>
+            }
           />
-        ) : (
-          <>
-            {folders.map((f) => (
-              <FolderCard
-                key={f._id}
-                folder={f}
-                onOpen={(fl) => navigate(`/documents/folder/${fl._id}`)}
-                onRename={handleRenameFolder}
-                onDelete={handleDeleteFolder}
-              />
-            ))}
-            {filteredDocsInFolder.map((doc) =>
-              renaming?.id === doc._id ? (
-                <div key={doc._id} className="flex items-center gap-3 px-4 py-3 border-b border-ink/8">
-                  <input
-                    autoFocus
-                    value={renaming.name}
-                    onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && submitRename()}
-                    className="flex-1 border border-ink/15 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-vault/40"
+        </div>
+      ) : (
+        <>
+          {folders.length > 0 && (
+            <div className="mb-8">
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate">Folders</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {folders.map((f) => (
+                  <FolderCard
+                    key={f._id}
+                    folder={f}
+                    onOpen={(fl) => navigate(`/documents/folder/${fl._id}`)}
+                    onRename={handleRenameFolder}
+                    onDelete={handleDeleteFolder}
                   />
-                  <button onClick={submitRename} className="text-xs font-medium text-vault-dark">
-                    Save
-                  </button>
-                  <button onClick={() => setRenaming(null)} className="text-xs font-medium text-slate">
-                    Cancel
-                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {filteredDocsInFolder.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-slate">Files</h2>
+                <button
+                  onClick={() =>
+                    setSelected((prev) =>
+                      prev.size === filteredDocsInFolder.length
+                        ? new Set()
+                        : new Set(filteredDocsInFolder.map((d) => d._id))
+                    )
+                  }
+                  className="text-xs font-semibold text-slate transition hover:text-vault-dark"
+                >
+                  {selected.size === filteredDocsInFolder.length ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+              {view === 'grid' ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                  {filteredDocsInFolder.map((doc) =>
+                    renaming?.id === doc._id ? (
+                      <div key={doc._id} className="card col-span-2 flex items-center gap-2 p-3 sm:col-span-1">
+                        <input
+                          autoFocus
+                          value={renaming.name}
+                          onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') submitRename();
+                            if (e.key === 'Escape') setRenaming(null);
+                          }}
+                          className="input flex-1"
+                        />
+                        <button onClick={submitRename} className="btn-primary btn-sm">
+                          Save
+                        </button>
+                      </div>
+                    ) : (
+                      <DocumentGridCard
+                        key={doc._id}
+                        document={doc}
+                        onOpen={handleOpenDoc}
+                        onDownload={handleDownload}
+                        onRename={handleRename}
+                        onDelete={handleDeleteDoc}
+                        selected={selected.has(doc._id)}
+                        onToggleSelect={toggleSelect}
+                      />
+                    )
+                  )}
                 </div>
               ) : (
-                <DocumentRow
-                  key={doc._id}
-                  document={doc}
-                  onOpen={handleOpenDoc}
-                  onDownload={handleDownload}
-                  onRename={handleRename}
-                  onDelete={handleDeleteDoc}
-                />
-              )
-            )}
-          </>
-        )}
-      </div>
+                <div className="card overflow-hidden">
+                  <div className="hidden grid-cols-[auto_1fr_90px_120px_auto] gap-4 border-b border-ink/5 bg-paper/70 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate md:grid">
+                    <span className="w-11" />
+                    <span>Name</span>
+                    <span className="text-right">Size</span>
+                    <span className="text-right">Uploaded</span>
+                    <span className="w-[120px]" />
+                  </div>
+                  {filteredDocsInFolder.map((doc) =>
+                    renaming?.id === doc._id ? (
+                      <div key={doc._id} className="flex items-center gap-3 border-b border-ink/5 bg-vault-light/40 px-4 py-3">
+                        <input
+                          autoFocus
+                          value={renaming.name}
+                          onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') submitRename();
+                            if (e.key === 'Escape') setRenaming(null);
+                          }}
+                          className="input flex-1"
+                        />
+                        <button onClick={submitRename} className="btn-primary btn-sm">
+                          Save
+                        </button>
+                        <button onClick={() => setRenaming(null)} className="btn-ghost btn-sm">
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <DocumentRow
+                        key={doc._id}
+                        document={doc}
+                        onOpen={handleOpenDoc}
+                        onDownload={handleDownload}
+                        onRename={handleRename}
+                        onDelete={handleDeleteDoc}
+                        selected={selected.has(doc._id)}
+                        onToggleSelect={toggleSelect}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       <UploadModal
         open={uploadOpen}
@@ -259,6 +396,25 @@ export default function Documents() {
         folderId={folderId || null}
         onUploaded={load}
       />
+
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4 md:bottom-6">
+          <div className="flex items-center gap-3 rounded-2xl bg-night-900 px-5 py-3 text-white shadow-modal ring-1 ring-white/10 animate-slide-up">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-vault text-xs font-bold">
+              {selected.size}
+            </span>
+            <span className="text-sm font-semibold">selected</span>
+            <span className="mx-1 h-5 w-px bg-white/15" />
+            <button onClick={clearSelection} className="text-sm font-medium text-white/60 transition hover:text-white">
+              Clear
+            </button>
+            <button onClick={handleBulkDelete} className="btn-danger btn-sm">
+              <Icon name="trash" className="h-4 w-4" />
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
       <NewFolderModal
         open={folderModal.open}
         title={folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
@@ -268,12 +424,15 @@ export default function Documents() {
       />
       <ConfirmDialog
         open={confirm.open}
-        title={confirm.type === 'folder' ? 'Delete folder?' : 'Delete document?'}
+        title={confirm.type === 'folder' ? 'Delete folder?' : confirm.type === 'bulk' ? `Delete ${selected.size} document${selected.size === 1 ? '' : 's'}?` : 'Delete document?'}
         message={
           confirm.type === 'folder'
             ? 'This will permanently delete the folder and everything inside it.'
+            : confirm.type === 'bulk'
+            ? 'This will permanently delete the selected documents. This can\'t be undone.'
             : 'This will permanently delete the document.'
         }
+        confirmLabel={bulkDeleting ? 'Deleting…' : 'Delete'}
         onCancel={() => setConfirm({ open: false, type: null, target: null })}
         onConfirm={confirmDelete}
       />

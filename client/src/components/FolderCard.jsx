@@ -1,21 +1,24 @@
 import React from 'react';
+import Icon from './Icon';
 
 export default function FolderCard({ folder, onOpen, onRename, onDelete }) {
   return (
-    <div className="group flex items-center justify-between px-4 py-3 border-b border-ink/8 hover:bg-white transition-colors">
-      <button
-        onClick={() => onOpen(folder)}
-        className="flex items-center gap-3 text-left flex-1 min-w-0"
-      >
-        <span className="h-7 w-9 rounded bg-brass-light border border-brass/30 shrink-0" />
-        <span className="text-sm font-medium text-ink truncate">{folder.name}</span>
+    <div className="card group flex items-center gap-3 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift">
+      <button onClick={() => onOpen(folder)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brass text-white shadow-md transition-transform group-hover:scale-105">
+          <Icon name="folder" className="h-6 w-6" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-ink">{folder.name}</span>
+          <span className="block text-xs text-slate">Folder</span>
+        </span>
       </button>
-      <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button onClick={() => onRename(folder)} className="text-xs font-medium text-slate hover:text-ink">
-          Rename
+      <div className="flex shrink-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+        <button onClick={() => onRename(folder)} className="icon-btn" title="Rename" aria-label="Rename folder">
+          <Icon name="pencil" className="h-4 w-4" />
         </button>
-        <button onClick={() => onDelete(folder)} className="text-xs font-medium text-rust hover:underline">
-          Delete
+        <button onClick={() => onDelete(folder)} className="icon-btn-danger" title="Delete" aria-label="Delete folder">
+          <Icon name="trash" className="h-4 w-4" />
         </button>
       </div>
     </div>

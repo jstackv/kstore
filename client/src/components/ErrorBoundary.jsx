@@ -18,9 +18,9 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-paper px-6">
-          <div className="max-w-xl w-full bg-white border border-rust/30 rounded-lg p-6">
-            <h1 className="font-serif text-lg text-rust mb-2">Something broke</h1>
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <div className="max-w-xl w-full card p-7 ring-rust/30">
+            <h1 className="font-serif text-2xl text-rust mb-2">Something broke</h1>
             <p className="text-sm text-slate mb-4">
               An error stopped the page from rendering. The details below are also in your
               browser console (F12 → Console) — copy them back to Claude to get this fixed.
@@ -32,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
             </pre>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 bg-vault text-white text-sm font-medium rounded-md px-4 py-2.5 hover:bg-vault-dark"
+              className="btn-primary mt-4"
             >
               Reload
             </button>

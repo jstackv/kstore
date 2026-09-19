@@ -61,7 +61,7 @@ The API runs at `http://localhost:5000`. Check it's alive at `GET /api/health`.
 
 ```bash
 cd client
-npm install
+npm install   # installs docx-preview for in-browser Word viewing
 npm run dev
 ```
 
@@ -87,7 +87,9 @@ All document/folder/dashboard routes require authentication (JWT via httpOnly co
 | POST | `/api/documents/upload` | Upload a file (`multipart/form-data`, field `file`, optional `folderId`) |
 | GET | `/api/documents` | List, with `?search=&fileType=&folderId=&sortBy=&order=` |
 | GET | `/api/documents/:id` | Get one |
-| GET | `/api/documents/:id/view` | Get an inline-viewable URL |
+| GET | `/api/documents/:id/view` | Get the public storage URL (used by the hosted Office viewer) |
+| GET | `/api/documents/:id/file` | Stream the file with `Content-Disposition: inline` for in-browser viewing |
+| POST | `/api/documents/:id/warm` | Fire-and-forget: pre-fetch the file into the local cache (called on row hover) so View feels instant |
 | GET | `/api/documents/:id/download` | Stream the file with its original filename |
 | PUT | `/api/documents/:id` | Rename / move (`{ name, folderId }`) |
 | DELETE | `/api/documents/:id` | Delete (also removes the Cloudinary asset) |
@@ -114,6 +116,7 @@ All document/folder/dashboard routes require authentication (JWT via httpOnly co
 - Cloudinary credentials live only in `server/.env` and are never sent to the client.
 - `helmet` sets standard security headers; `express-rate-limit` throttles the general API and applies a stricter limit to `/api/auth/login` and `/api/auth/register`.
 - For production, set `NODE_ENV=production` (tightens cookie `secure`/`sameSite`) and serve everything over HTTPS.
+- The server keeps a local disk cache of file bytes at `server/.filecache/` (capped at ~500MB, oldest files evicted first) so viewing/downloading doesn't wait on Cloudinary every time. It's already in `.gitignore`; delete it any time to reclaim space, it's rebuilt on demand.
 
 ## 6. Testing it end to end
 
@@ -121,7 +124,7 @@ All document/folder/dashboard routes require authentication (JWT via httpOnly co
 2. Visit `http://localhost:5173`, register an account.
 3. From the dashboard, click **Upload document**, drop in a PDF or image.
 4. Go to **Documents**, create a folder, move or rename a file, try search/filter/sort.
-5. Click a document to preview it (PDFs and images preview inline; other types offer a download).
+5. Click **View** on a document to open it in the browser without downloading: PDFs and images render natively, `.docx` is rendered in-page, and `.doc/.xls(x)/.ppt(x)` open in the embedded Microsoft Office viewer.
 6. Download a file and confirm the original filename and extension are preserved.
 7. Try deleting a folder that has files in it — confirm the files and their Cloudinary assets are gone too (check your Cloudinary Media Library).
 
