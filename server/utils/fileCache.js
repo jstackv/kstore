@@ -5,8 +5,13 @@ const { openRemoteFile } = require('./remoteFile');
 
 // Local disk cache of uploaded files so viewing/downloading never has to wait on the
 // round trip to cloud storage. Cloudinary stays the source of truth; this is only a cache.
-const DIR = path.join(__dirname, '..', '.filecache');
-const MAX_BYTES = 500 * 1024 * 1024; // keep at most ~500MB, oldest files are evicted first
+//
+// On Vercel, every directory except /tmp is read-only, and /tmp itself is
+// ephemeral (wiped between cold starts, not shared across instances) - so
+// this still works as a best-effort cache there, just a much less durable
+// one than on a traditional host. Nothing here assumes the cache survives.
+const DIR = process.env.VERCEL ? path.join('/tmp', 'kstore-filecache') : path.join(__dirname, '..', '.filecache');
+const MAX_BYTES = (process.env.VERCEL ? 200 : 500) * 1024 * 1024;
 
 const inflight = new Map(); // id -> Promise<{ ok, statusCode?, error? }>
 

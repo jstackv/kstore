@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// In dev, Vite's proxy forwards /api to the local backend (see vite.config.js),
+// so a relative URL is enough. In production, the frontend and backend are
+// typically separate Vercel projects on different domains, so VITE_API_URL
+// (set at build time) points straight at the deployed backend instead.
+const API_ROOT = import.meta.env.VITE_API_URL || '';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_ROOT}/api`,
   withCredentials: true,
 });
 

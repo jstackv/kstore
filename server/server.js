@@ -1,62 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
-const rateLimit = require('express-rate-limit');
-
-const connectDB = require('./config/db');
-const { errorHandler, notFound } = require('./middleware/errorHandler');
-
-const authRoutes = require('./routes/authRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const folderRoutes = require('./routes/folderRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-
-connectDB();
-
-const app = express();
-
-app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true,
-  })
-);
-app.use(express.json());
-app.use(cookieParser());
-if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
-
-// General rate limit
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api', apiLimiter);
-
-// Stricter limit on auth endpoints to slow down credential stuffing
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-
-app.get('/api/health', (req, res) => res.json({ success: true, message: 'KStore API is running' }));
-
-app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/folders', folderRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-
-app.use(notFound);
-app.use(errorHandler);
+// Traditional-server entry point - used for local development and for any
+// host that runs a long-lived Node process (Render, Railway, Fly.io, a VPS).
+// Vercel does not use this file: it calls api/index.js instead, which
+// exports the same Express app (app.js) as a serverless function.
+const app = require('./app');
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`KStore server running on port ${PORT}`));
