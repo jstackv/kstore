@@ -9,29 +9,6 @@ const cookieOptions = () => ({
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 });
 
-// @route POST /api/auth/register
-const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-
-  if (!name || !email || !password) {
-    return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
-  }
-
-  const existing = await User.findOne({ email: email.toLowerCase() });
-  if (existing) {
-    return res.status(400).json({ success: false, message: 'An account with this email already exists' });
-  }
-
-  const user = await User.create({ name, email, password });
-  const token = generateToken(user._id);
-
-  res.cookie('token', token, cookieOptions());
-  res.status(201).json({ success: true, user: user.toSafeObject(), token });
-});
-
 // @route POST /api/auth/login
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -95,4 +72,4 @@ const updateProfile = asyncHandler(async (req, res) => {
   res.json({ success: true, user: req.user.toSafeObject() });
 });
 
-module.exports = { register, login, logout, getMe, changePassword, updateProfile };
+module.exports = { login, logout, getMe, changePassword, updateProfile };

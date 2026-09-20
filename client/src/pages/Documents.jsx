@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { listDocuments, warmDocument, downloadDocument, deleteDocument, updateDocument } from '../services/documentService';
-import { listFolders, getFolder, createFolder, updateFolder, deleteFolder } from '../services/folderService';
+import { listFolders, getFolder, createFolder, updateFolder, deleteFolder, createShareLink } from '../services/folderService';
 import DocumentRow from '../components/DocumentRow';
 import DocumentGridCard from '../components/DocumentGridCard';
 import FolderCard from '../components/FolderCard';
@@ -147,6 +147,18 @@ export default function Documents() {
   const handleRenameFolder = (f) => setFolderModal({ open: true, mode: 'rename', target: f });
   const handleCreateFolder = () => setFolderModal({ open: true, mode: 'create', target: null });
 
+  const handleShareFolder = async (f) => {
+    try {
+      const res = await createShareLink(f._id);
+      const url = `${window.location.origin}/share/${res.shareToken}`;
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied — anyone with it can view this folder without signing in');
+      load();
+    } catch {
+      showToast('Could not create share link', 'error');
+    }
+  };
+
   const submitFolderModal = async (name) => {
     try {
       if (folderModal.mode === 'create') {
@@ -188,6 +200,12 @@ export default function Documents() {
         </div>
 
         <div className="flex gap-2">
+          {folder && (
+            <button onClick={() => handleShareFolder(folder)} className="btn-ghost">
+              <Icon name="link" className="h-4 w-4" />
+              {folder.shareToken ? 'Copy link' : 'Share'}
+            </button>
+          )}
           <button onClick={handleCreateFolder} className="btn-ghost">
             <Icon name="folder-plus" className="h-4 w-4" />
             New folder
@@ -285,6 +303,7 @@ export default function Documents() {
                     onOpen={(fl) => navigate(`/documents/folder/${fl._id}`)}
                     onRename={handleRenameFolder}
                     onDelete={handleDeleteFolder}
+                    onShare={handleShareFolder}
                   />
                 ))}
               </div>

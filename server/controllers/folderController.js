@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Folder = require('../models/Folder');
 const Document = require('../models/Document');
 const asyncHandler = require('../utils/asyncHandler');
@@ -98,4 +99,31 @@ const deleteFolder = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Folder and its contents deleted' });
 });
 
-module.exports = { createFolder, getFolders, getFolder, updateFolder, deleteFolder };
+// @route POST /api/folders/:id/share
+// Creates (or returns the existing) public share token for a folder.
+// Idempotent: calling it again on an already-shared folder just returns the same link.
+const createShareLink = asyncHandler(async (req, res) => {
+  const folder = await Folder.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!folder) {
+    return res.status(404).json({ success: false, message: 'Folder not found' });
+  }
+  if (!folder.shareToken) {
+    folder.shareToken = crypto.randomBytes(20).toString('hex');
+    await folder.save();
+  }
+  res.json({ success: true, shareToken: folder.shareToken });
+});
+
+// @route DELETE /api/folders/:id/share
+// Revokes a folder's public link. The folder itself is untouched.
+const revokeShareLink = asyncHandler(async (req, res) => {
+  const folder = await Folder.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!folder) {
+    return res.status(404).json({ success: false, message: 'Folder not found' });
+  }
+  folder.shareToken = null;
+  await folder.save();
+  res.json({ success: true, message: 'Link revoked' });
+});
+
+module.exports = { createFolder, getFolders, getFolder, updateFolder, deleteFolder, createShareLink, revokeShareLink };

@@ -1,17 +1,11 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
-const {
-  register,
-  login,
-  logout,
-  getMe,
-  changePassword,
-  updateProfile,
-} = require('../controllers/authController');
+const { login, logout, getMe, changePassword, updateProfile } = require('../controllers/authController');
 
 const router = express.Router();
 
-router.post('/register', register);
+// No public /register - accounts are created by an admin (see adminRoutes.js)
+// or, for the very first admin account, via /api/admin/bootstrap.
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);

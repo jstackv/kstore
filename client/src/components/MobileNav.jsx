@@ -1,17 +1,21 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import Icon from './Icon';
+import { useAuth } from '../context/AuthContext';
 
-const NAV = [
+const BASE_NAV = [
   { to: '/', label: 'Home', icon: 'grid', end: true },
   { to: '/documents', label: 'Documents', icon: 'files' },
   { to: '/profile', label: 'Profile', icon: 'user' },
 ];
 
 export default function MobileNav() {
+  const { user } = useAuth();
+  const nav = user?.role === 'admin' ? [...BASE_NAV, { to: '/admin/users', label: 'Users', icon: 'shield' }] : BASE_NAV;
+
   return (
     <nav className="fixed inset-x-3 bottom-3 z-40 flex rounded-2xl bg-night-800/95 p-1.5 shadow-modal ring-1 ring-white/10 backdrop-blur-xl md:hidden">
-      {NAV.map((item) => (
+      {nav.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}

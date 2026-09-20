@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import AuthShell from '../components/AuthShell';
@@ -29,14 +29,7 @@ export default function Login() {
     <AuthShell
       title="Welcome back"
       subtitle="Sign in to open your vault."
-      footer={
-        <>
-          Don't have an account?{' '}
-          <Link to="/register" className="font-semibold text-vault-dark hover:underline">
-            Create one
-          </Link>
-        </>
-      }
+      footer="Accounts are created by your workspace admin - contact them if you need access."
     >
       <form onSubmit={submit}>
         <label className="label">Email</label>

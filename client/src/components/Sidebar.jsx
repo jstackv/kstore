@@ -6,7 +6,7 @@ import Icon from './Icon';
 import Logo from './Logo';
 import ConfirmDialog from './ConfirmDialog';
 
-const NAV = [
+const BASE_NAV = [
   { to: '/', label: 'Dashboard', icon: 'grid', end: true },
   { to: '/documents', label: 'Documents', icon: 'files' },
   { to: '/profile', label: 'Profile', icon: 'user' },
@@ -17,6 +17,7 @@ export default function Sidebar({ storageUsed = 0, collapsed = false }) {
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const pct = Math.min(100, (storageUsed / STORAGE_LIMIT) * 100);
   const shown = storageUsed > 0 ? Math.max(pct, 3) : 0;
+  const nav = user?.role === 'admin' ? [...BASE_NAV, { to: '/admin/users', label: 'Users', icon: 'shield' }] : BASE_NAV;
 
   return (
     <aside
@@ -31,7 +32,7 @@ export default function Sidebar({ storageUsed = 0, collapsed = false }) {
       </div>
 
       <nav className="relative flex flex-col gap-1.5">
-        {NAV.map((item) => (
+        {nav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

@@ -13,6 +13,8 @@ const authRoutes = require('./routes/authRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const folderRoutes = require('./routes/folderRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 // Kicks off the (cached) connection at module load. On Vercel this runs once
 // per cold start; warm invocations reuse the same connection - see config/db.js.
@@ -48,7 +50,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/admin/bootstrap', authLimiter);
 
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'KStore API is running' }));
 
@@ -56,6 +58,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/public', publicRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -6,6 +6,8 @@ const {
   getFolder,
   updateFolder,
   deleteFolder,
+  createShareLink,
+  revokeShareLink,
 } = require('../controllers/folderController');
 
 const router = express.Router();
@@ -17,5 +19,7 @@ router.get('/', getFolders);
 router.get('/:id', getFolder);
 router.put('/:id', updateFolder);
 router.delete('/:id', deleteFolder);
+router.post('/:id/share', createShareLink);
+router.delete('/:id/share', revokeShareLink);
 
 module.exports = router;

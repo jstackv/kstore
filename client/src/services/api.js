@@ -5,6 +5,7 @@ import axios from 'axios';
 // typically separate Vercel projects on different domains, so VITE_API_URL
 // (set at build time) points straight at the deployed backend instead.
 const API_ROOT = import.meta.env.VITE_API_URL || '';
+export { API_ROOT };
 
 const api = axios.create({
   baseURL: `${API_ROOT}/api`,

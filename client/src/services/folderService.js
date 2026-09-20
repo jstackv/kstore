@@ -8,3 +8,5 @@ export const createFolder = (name, parentFolderId) =>
   api.post('/folders', { name, parentFolderId }).then((r) => r.data);
 export const updateFolder = (id, name) => api.put(`/folders/${id}`, { name }).then((r) => r.data);
 export const deleteFolder = (id) => api.delete(`/folders/${id}`).then((r) => r.data);
+export const createShareLink = (id) => api.post(`/folders/${id}/share`).then((r) => r.data);
+export const revokeShareLink = (id) => api.delete(`/folders/${id}/share`).then((r) => r.data);

@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
     storageUsed: { type: Number, default: 0 }, // bytes
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
   },
   { timestamps: true }
 );
@@ -39,6 +40,7 @@ userSchema.methods.toSafeObject = function () {
     id: this._id,
     name: this.name,
     email: this.email,
+    role: this.role,
     storageUsed: this.storageUsed,
     createdAt: this.createdAt,
   };

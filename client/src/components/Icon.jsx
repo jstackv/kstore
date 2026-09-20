@@ -133,6 +133,7 @@ const ICONS = {
       <path d="M9.5 4v16" />
     </>
   ),
+  link: <path d="M9 15l6-6M10 6l1.4-1.4a4 4 0 1 1 5.6 5.6L15.5 11.6M14 18l-1.4 1.4a4 4 0 1 1-5.6-5.6L8.5 12.4" />,
 };
 
 export default function Icon({ name, className = 'h-5 w-5', strokeWidth = 1.8 }) {

@@ -210,4 +210,5 @@ module.exports = {
   downloadDocument,
   updateDocument,
   deleteDocument,
+  serveDocument,
 };
