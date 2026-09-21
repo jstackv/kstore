@@ -22,10 +22,16 @@ connectDB().catch((err) => console.error('Initial MongoDB connection failed:', e
 
 const app = express();
 
+// CLIENT_URL may hold one origin or several, comma-separated.
+const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: clientOrigins,
     credentials: true,
   })
 );
@@ -51,6 +57,21 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/admin/bootstrap', authLimiter);
+
+// Shared files are shown inside the frontend, which lives on a different origin
+// in production (two Vercel projects). helmet()'s defaults - X-Frame-Options:
+// SAMEORIGIN, CSP frame-ancestors 'self' and Cross-Origin-Resource-Policy:
+// same-origin - make the browser refuse to embed them, which is exactly the
+// "kstorebackend.vercel.app refused to connect" error. Relax that for the
+// public file routes ONLY, and only for our own frontend origin(s); every
+// other route keeps helmet's strict defaults.
+const allowShareEmbedding = (req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('Content-Security-Policy', `frame-ancestors ${clientOrigins.join(' ')}`);
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+};
+app.use('/api/public/documents', allowShareEmbedding);
 
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'KStore API is running' }));
 

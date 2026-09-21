@@ -1,5 +1,6 @@
 const Folder = require('../models/Folder');
 const Document = require('../models/Document');
+const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const { serveDocument } = require('./documentController');
 
@@ -13,6 +14,19 @@ const { serveDocument } = require('./documentController');
 
 const findSharedFolder = (token) => Folder.findOne({ shareToken: token });
 
+// Public callers only get the fields a viewer needs - never the storage URL
+// (which can be a signed Cloudinary link), the storage key or the owner's id.
+// The file itself is only reachable through the token-checked /file and
+// /download routes below.
+const toPublicDocument = (d) => ({
+  _id: d._id,
+  name: d.name,
+  fileType: d.fileType,
+  mimeType: d.mimeType,
+  fileSize: d.fileSize,
+  createdAt: d.createdAt,
+});
+
 // @route GET /api/public/folders/:token
 const getSharedFolder = asyncHandler(async (req, res) => {
   const folder = await findSharedFolder(req.params.token);
@@ -20,10 +34,22 @@ const getSharedFolder = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'This link is invalid or has been revoked' });
   }
   const documents = await Document.find({ folderId: folder._id }).sort({ createdAt: -1 });
+
+  // Show who shared it (name only). Purely cosmetic, so a lookup failure must
+  // never break the page.
+  let sharedBy = null;
+  try {
+    const owner = await User.findById(folder.userId).select('name');
+    sharedBy = owner?.name || null;
+  } catch {
+    /* ignore */
+  }
+
+  res.set('X-Robots-Tag', 'noindex, nofollow'); // keep share links out of search engines
   res.json({
     success: true,
-    folder: { id: folder._id, name: folder.name },
-    documents,
+    folder: { id: folder._id, name: folder.name, sharedBy, createdAt: folder.createdAt },
+    documents: documents.map(toPublicDocument),
   });
 });
 

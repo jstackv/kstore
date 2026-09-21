@@ -119,3 +119,132 @@
     @apply rounded-lg bg-ink/[0.06] animate-pulse;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Share pages: public folder + document viewer                        */
+/* ------------------------------------------------------------------ */
+@layer components {
+  /* Frosted panel that follows the light/dark theme */
+  .glass {
+    @apply bg-surface/90 shadow-card ring-1 ring-ink/10 backdrop-blur-xl;
+  }
+
+  /* Controls for the always-dark document viewer (independent of site theme) */
+  .vbtn {
+    @apply inline-flex h-9 min-w-[2.25rem] select-none items-center justify-center gap-2 rounded-xl px-2.5 text-xs font-semibold
+      text-white/75 transition-all duration-200
+      hover:bg-white/10 hover:text-white active:scale-95
+      focus:outline-none focus-visible:ring-4 focus-visible:ring-vault-glow/40
+      disabled:pointer-events-none disabled:opacity-35;
+  }
+  .vbtn-on {
+    @apply bg-white/15 text-white;
+  }
+  .vbtn-primary {
+    @apply vbtn bg-vault px-3.5 text-white shadow-glow hover:-translate-y-0.5 hover:bg-vault-dark;
+  }
+  /* Floating control pill that sits over the document stage */
+  .vpill {
+    @apply flex items-center gap-0.5 rounded-2xl bg-night-900/95 p-1 text-white shadow-modal ring-1 ring-white/10 backdrop-blur-xl;
+  }
+  .vsep {
+    @apply mx-1 h-5 w-px bg-white/10;
+  }
+  .kbd {
+    @apply inline-flex min-w-[1.6rem] items-center justify-center rounded-md border border-white/15 bg-white/10 px-1.5 py-0.5
+      font-mono text-[11px] font-semibold text-white/90 shadow-[0_2px_0_rgba(255,255,255,0.08)];
+  }
+  .kbd-hint {
+    @apply inline-flex items-center justify-center rounded-md border border-ink/15 bg-paper px-1.5 py-px
+      font-mono text-[10px] font-semibold text-slate;
+  }
+
+  /* Filter chip on the folder toolbar */
+  .chip {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-slate
+      ring-1 ring-ink/10 transition-all duration-200
+      hover:text-ink hover:ring-vault/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-vault/25;
+  }
+  .chip-on {
+    @apply bg-vault text-white shadow-glow ring-vault hover:text-white;
+  }
+}
+
+/* Slow-drifting colour glows behind the shared-folder hero */
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.55;
+  animation: aurora 20s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(70px, 40px, 0) scale(1.15); }
+  66% { transform: translate3d(-50px, 70px, 0) scale(0.92); }
+}
+
+/* Staggered entrance for cards and rows (delay is set inline per item) */
+.rise {
+  animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Shimmer over a PDF page (or thumbnail) that is still being drawn */
+.page-shimmer {
+  background: linear-gradient(100deg, #ffffff 30%, #eceeff 50%, #ffffff 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+.spin-arc {
+  transform-origin: 50% 50%;
+  animation: spin-arc 1s linear infinite;
+}
+@keyframes spin-arc {
+  to { transform: rotate(360deg); }
+}
+
+/* Faint dotted grid used on hero + viewer backgrounds */
+.dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* docx-preview paints a grey desk with white pages; restyle it for the dark stage */
+.docx-stage .docx-wrapper {
+  background: transparent !important;
+  padding: 8px 0 110px !important;
+}
+.docx-stage .docx-wrapper > section.docx {
+  box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.65) !important;
+  margin-bottom: 22px !important;
+  border-radius: 3px;
+}
+
+/* Checkerboard so transparent PNGs read as transparent */
+.checker {
+  background-color: #14162f;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.045) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.045) 75%);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Hide scrollbars on horizontal chip / filmstrip rails but keep them scrollable */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora, .rise, .page-shimmer, .spin-arc {
+    animation: none !important;
+  }
+}
